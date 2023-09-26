@@ -1,0 +1,66 @@
+// Backup code 
+package arrays;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+
+class Node {
+    int x, y;
+    String label;
+
+     Node(int x, int y, String label) {
+        this.x = x;
+        this.y = y;
+        this.label = label;
+    }
+}
+
+@SuppressWarnings("serial")
+class GraphPanel extends JPanel {
+    private final List<Node> nodes;
+
+    GraphPanel() {
+        nodes = new ArrayList<>();
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                addNode(e.getX(), e.getY());
+            }
+        });
+    }
+
+    void addNode(int x, int y) {
+        String label = JOptionPane.showInputDialog("Enter node label:");
+        if (label != null && !label.isEmpty()) {
+            nodes.add(new Node(x, y, label));
+            repaint();
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        for (Node node : nodes) {
+            g.setColor(Color.BLUE);
+            g.fillOval(node.x - 15, node.y - 15, 30, 30);
+            g.setColor(Color.BLACK);
+            g.drawString(node.label, node.x - 5, node.y + 5);
+        }
+    }
+}
+
+public class GraphVisualizer {
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Graph Visualizer");
+            GraphPanel graphPanel = new GraphPanel();
+            frame.add(graphPanel);
+            frame.setSize(800, 600);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setVisible(true);
+        });
+    }
+}
