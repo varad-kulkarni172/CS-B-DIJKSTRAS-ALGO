@@ -1,0 +1,170 @@
+package arrays;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.util.List;
+
+class Graph {
+    Map<Integer, Node> nodes = new HashMap<>();
+
+    public void addNode(int id, int x, int y) {
+        nodes.put(id, new Node(id, x, y));
+    }
+
+    public void addEdge(int sourceId, int targetId, int weight) {
+        Node source = nodes.get(sourceId);
+        Node target = nodes.get(targetId);
+        if (source != null && target != null) {
+            source.addNeighbor(target, weight);
+        }
+    }
+
+    public List<Integer> shortestPath(int startId, int endId) {
+        Node start = nodes.get(startId);
+        Node end = nodes.get(endId);
+        if (start == null || end == null) {
+            return null;
+        }
+
+        Map<Node, Integer> distance = new HashMap<>();
+        Map<Node, Node> previous = new HashMap<>();
+        PriorityQueue<Node> queue = new PriorityQueue<>(Comparator.comparingInt(distance::get));
+
+        for (Node node : nodes.values()) {
+            distance.put(node, Integer.MAX_VALUE);
+            previous.put(node, null);
+        }
+
+        distance.put(start, 0);
+        queue.add(start);
+
+        while (!queue.isEmpty()) {
+            Node current = queue.poll();
+            if (current == end) {
+                break;
+            }
+
+            for (Map.Entry<Node, Integer> entry : current.getNeighbors().entrySet()) {
+                Node neighbor = entry.getKey();
+                int alt = distance.get(current) + entry.getValue();
+                if (alt < distance.get(neighbor)) {
+                    distance.put(neighbor, alt);
+                    previous.put(neighbor, current);
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        LinkedList<Integer> path = new LinkedList<>();
+        Node current = end;
+        while (current != null) {
+            path.addFirst(current.getId());
+            current = previous.get(current);
+        }
+
+        return path;
+    }
+}
+
+class Node {
+    private int id;
+    private int x;
+    private int y;
+    private Map<Node, Integer> neighbors = new HashMap<>();
+
+    public Node(int id, int x, int y) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public Map<Node, Integer> getNeighbors() {
+        return neighbors;
+    }
+
+    public void addNeighbor(Node neighbor, int weight) {
+        neighbors.put(neighbor, weight);
+    }
+}
+
+@SuppressWarnings("serial")
+public class GraphVisualizer extends JPanel {
+    private Graph graph = new Graph();
+    private List<Integer> shortestPath = new ArrayList<>(); // Initialize to an empty list
+
+    public GraphVisualizer() {
+        JFrame frame = new JFrame("Graph Visualization");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(this);
+        frame.setSize(800, 600);
+        frame.setVisible(true);
+
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    int id = Integer.parseInt(JOptionPane.showInputDialog("Enter node ID:"));
+                    int x = e.getX(); // Get X coordinate of mouse click
+                    int y = e.getY(); // Get Y coordinate of mouse click
+                    graph.addNode(id, x, y);
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    int sourceId = Integer.parseInt(JOptionPane.showInputDialog("Enter source node ID:"));
+                    int targetId = Integer.parseInt(JOptionPane.showInputDialog("Enter target node ID:"));
+                    int weight = Integer.parseInt(JOptionPane.showInputDialog("Enter edge weight:"));
+                    graph.addEdge(sourceId, targetId, weight);
+                }
+                repaint();
+            }
+        });
+
+        JButton computeButton = new JButton("Compute Shortest Path");
+        computeButton.addActionListener(e -> {
+            int startId = Integer.parseInt(JOptionPane.showInputDialog("Enter start node ID:"));
+            int endId = Integer.parseInt(JOptionPane.showInputDialog("Enter end node ID:"));
+            shortestPath = graph.shortestPath(startId, endId);
+            repaint();
+        });
+        add(computeButton);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        for (Node node : graph.nodes.values()) {
+            g.setColor(Color.BLUE);
+            g.fillOval(node.getX() - 15, node.getY() - 15, 30, 30);
+            g.setColor(Color.BLACK);
+            g.drawString(Integer.toString(node.getId()), node.getX() - 5, node.getY() + 5);
+        }
+
+        if (!shortestPath.isEmpty()) {
+            g.setColor(Color.RED);
+            for (int i = 0; i < shortestPath.size() - 1; i++) {
+                Node currentNode = graph.nodes.get(shortestPath.get(i));
+                Node nextNode = graph.nodes.get(shortestPath.get(i + 1));
+                g.drawLine(currentNode.getX(), currentNode.getY(), nextNode.getX(), nextNode.getY());
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            new GraphVisualizer();
+        });
+    }
+}
+
